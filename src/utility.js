@@ -1,4 +1,4 @@
-const { Notification, screen } = require('electron');
+const { Notification, screen, shell } = require('electron');
 const { exec } = require('child_process');
 const { WINDOWS_APPS, LINUX_APPS } = require('./constants');
 
@@ -8,7 +8,9 @@ function Notify(_Title, _Body){
 
     new Notification({
         title: _Title,
-        body: _Body
+        body: _Body,
+        timeoutType: "never",
+        urgency: "critical"
     }).show();
 
 }
@@ -21,26 +23,9 @@ function checkMultipleDisplays(){
   return true;
 }
 
-function disableSecondaryDisplays() {
-  const displays = screen.getAllDisplays();
-  const primaryDisplay = screen.getPrimaryDisplay();
-
-  displays.forEach((display) => {
-    if (display.id !== primaryDisplay.id) {
-      // Disable the display
-      screen.disableDisplay(display.id);
-    }
-    console.log(display.label+" disabled.");
-  });
-}
-
-function enableAllDisplays(){
-  // Re-enable all disabled displays before quitting the app
-  screen.getAllDisplays().forEach((display) => {
-    if (!display.isEnabled) {
-      screen.enableAllDisplays();
-    }
-  });
+function multipleDisplaysAction(){
+  shell.beep();
+  Notify("Critical Alert", "Cannot initiate with multiple displays attached!");
 }
 
 function checkApplications() {
@@ -60,7 +45,7 @@ function checkApplications() {
             return;
           }
           // If stdout contains any output, a remote desktop application is running
-          isRemoteDesktopRunning = stdout.trim().length > 62    
+          isRemoteDesktopRunning = stdout.trim().length > 62
           if (isRemoteDesktopRunning) {
             Notify("REMOTE ACCESS ALERT", "Close all remote access apps!");
             console.log(app+' is running.');
@@ -84,11 +69,11 @@ function checkApplications() {
             console.error(error.message);
             return;
           }
-    
+
           let isRemoteDesktopRunning = false;
           // If stdout contains any output, a remote desktop application is running
           isRemoteDesktopRunning = stdout.trim().length > 1
-    
+
           if (isRemoteDesktopRunning) {
             Notify("REMOTE ACCESS ALERT", "Close all remote access apps!");
             console.log('A remote desktop application is running on Linux.');
@@ -111,6 +96,5 @@ module.exports = {
     Notify,
     checkApplications,
     checkMultipleDisplays,
-    disableSecondaryDisplays,
-    enableAllDisplays
+    multipleDisplaysAction
 }

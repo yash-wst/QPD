@@ -1,7 +1,7 @@
-const { app, BrowserWindow, clipboard, screen, ipcMain } = require('electron');
+const { app, BrowserWindow, clipboard, screen, ipcMain, shell } = require('electron');
 const path = require('path');
 const { registerGlobalShortcuts, unregisterGlobalShortcuts } = require('./keys');
-const { Notify, checkApplications,checkMultipleDisplays, disableSecondaryDisplays, enableAllDisplays } = require('./utility');
+const { Notify, checkApplications, checkMultipleDisplays, multipleDisplaysAction } = require('./utility');
 
 let mainWindow;
 
@@ -14,13 +14,11 @@ function createWindow() {
     fullscreen: true,
     width: screen.width, // Adjust the width as needed
     height: screen.height, // Adjust the height as needed
-    title: 'UniApps Exam Browser', // Set an empty string to hide the title bar
+    title: 'Exam Kiosk', // Set an empty string to hide the title bar
     // Hide the window frame (title bar and menu bar)
     // frame: false,
     // Hide the menu bar
     autoHideMenuBar: true,
-    resizable: false,
-    movable: false,
     skipTaskbar: true,
     webPreferences: {
       nodeIntegration: false,
@@ -36,8 +34,8 @@ function createWindow() {
 
   mainWindow.setAlwaysOnTop(true);
   mainWindow.setFullScreen(true);
+  // For linux and macos
   mainWindow.setVisibleOnAllWorkspaces(true);
-  mainWindow.show();
 
   mainWindow.webContents.on('before-input-event', (event, input) =>{
     // console.log(input);
@@ -48,6 +46,7 @@ function createWindow() {
   });
 
   mainWindow.on('resize', () => {
+    mainWindow.show();
     mainWindow.moveTop();
     mainWindow.setFullScreen(true);
   });
@@ -59,35 +58,38 @@ function createWindow() {
 
   mainWindow.on('show', () => {
     mainWindow.focus();
-  })
+  });
   // Open DevTools (optional)
   // mainWindow.webContents.openDevTools();
 }
 // Create the Electron window when the app is ready
 app.whenReady().then(() => {
-  
+
   const checkInterval = setInterval(() => {
-    if(checkApplications()){
+    if(checkApplications())
+    {
+      shell.beep();
       mainWindow.destroy();
       app.quit();
     }
     if(checkMultipleDisplays()){
-      mainWindow.moveTop();
+      multipleDisplaysAction();
     }
   }, 5000); // 5000 ms (5 seconds)
 
   // Check if multiple displays are attached
-  if (!checkMultipleDisplays() && !checkApplications()){
-  
+  displaycheck = !checkMultipleDisplays()
+  appcheck = !checkApplications()
+  if (displaycheck && appcheck){
+
   createWindow();
   registerGlobalShortcuts();
   clipboard.clear();
-  
+
   ipcMain.on('urlSubmitted', (event, url) => {
     console.log("URL: ",url);
     // Open the URL in the same Electron BrowserWindow
     mainWindow.loadURL(
-      // "192.168.1.201:9000"
       url,
       {userAgent: 'UniApps-1.0'});
   });
@@ -97,7 +99,7 @@ app.whenReady().then(() => {
     window.show();
     window.moveTop();
   });
-  
+
   // Quit when all windows are closed
   app.on('window-all-closed', () => {
     // On macOS, it's common for apps to stay open until explicitly quit
@@ -106,6 +108,11 @@ app.whenReady().then(() => {
         clipboard.clear();
         clearInterval(checkInterval);
         createWindow();
+
+        // app.quit() kills the application. Current behavior
+        // forbids the application to be quit manually, and the
+        // system must be restarted to close the application.
+
         // app.quit();
 
     }
@@ -119,9 +126,7 @@ app.on('activate', () => {
   }
 });
 } else{
-  console.log("Multiple displays detected");
-  console.log("RDS: "+checkApplications());
-  Notify("Critical Alert", "Cannot initiate with multiple displays attached!");
+  multipleDisplaysAction();
 }
 });
 
