@@ -14,7 +14,7 @@ function createWindow() {
     fullscreen: true,
     width: screen.width, // Adjust the width as needed
     height: screen.height, // Adjust the height as needed
-    title: 'Exam Kiosk', // Set an empty string to hide the title bar
+    title: 'QPD', // Set an empty string to hide the title bar
     // Hide the window frame (title bar and menu bar)
     // frame: false,
     // Hide the menu bar
@@ -31,29 +31,31 @@ function createWindow() {
   mainWindow.loadFile(
     'src/index.html'
     );
-
+  
   mainWindow.setAlwaysOnTop(true);
   mainWindow.setFullScreen(true);
   // For linux and macos
   mainWindow.setVisibleOnAllWorkspaces(true);
 
   mainWindow.webContents.on('before-input-event', (event, input) =>{
-    // console.log(input);
-    if (input.alt || input.meta || input.control){
+    if (input.alt || input.meta){
       console.log("Special keys used ",input.key);
       event.preventDefault();
+    }
+    if(input.control && input.key.toLowerCase == 'p'){
+      handleprint();
     }
   });
 
   mainWindow.on('resize', () => {
     mainWindow.show();
     mainWindow.moveTop();
-    mainWindow.setFullScreen(true);
+    // mainWindow.setFullScreen(true);
   });
 
   mainWindow.on('minimize', () => {
-    mainWindow.restore();
-    mainWindow.moveTop();
+    // mainWindow.restore();
+    // mainWindow.moveTop();
   });
 
   mainWindow.on('show', () => {
@@ -64,7 +66,6 @@ function createWindow() {
 }
 // Create the Electron window when the app is ready
 app.whenReady().then(() => {
-
   const checkInterval = setInterval(() => {
     if(checkApplications())
     {
@@ -130,3 +131,14 @@ app.on('activate', () => {
 }
 });
 
+function handleprint(){
+  mainWindow.webContents.getPrintersAsync().then((data) => {
+    // data will be an array of printer objects
+    for(printer in data){
+      console.log("Here are your printers: "+data[printer].name);
+    }
+}).catch((e) => {
+  console.log(e);
+    // handle error here
+})
+}

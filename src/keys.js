@@ -18,10 +18,10 @@ function registerGlobalShortcuts() {
         console.log("Dev tools opened")
       });
 
-    //   globalShortcut.register('Super', () => {
-    //     // Handler for super_key
-    //     console.log("Super key used")
-    //   });
+      // globalShortcut.register('CommandOrControl+P', () => {
+      //   // Handler for dev tools
+      //   console.log("Print option invoked");
+      // });
 
       globalShortcut.register('Alt+Tab', () => {
         // Handler for switch apps action
@@ -33,6 +33,7 @@ function registerGlobalShortcuts() {
         console.log("Minimize shortcut F11 used")
         Notify('Warning', 'Don\'t attempt to switch apps!');
       });
+      
 
 
 }
